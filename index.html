@@ -360,53 +360,152 @@
             scroll-behavior: smooth;
         }
 
+        /* ── Log entries – collapsible cards ── */
         .log-entry {
-            display: flex;
-            gap: 10px;
-            border-bottom: 1px solid rgba(255, 255, 255, .04);
-            padding: 3px 0;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            margin-bottom: 4px;
+            overflow: hidden;
+            animation: slideIn .18s ease;
+            transition: border-color .15s;
         }
 
-        .log-time {
-            color: #444c6b;
-            white-space: nowrap;
-            flex-shrink: 0;
+        .log-entry:hover {
+            border-color: var(--border);
+        }
+
+        .log-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 8px;
+            transition: background .12s;
+        }
+
+        .log-entry.expanded .log-header {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .log-header:hover {
+            background: rgba(255, 255, 255, .04);
         }
 
         .log-tag {
-            font-weight: 600;
+            font-family: var(--mono);
+            font-weight: 700;
+            font-size: .68rem;
+            letter-spacing: .06em;
+            padding: 2px 7px;
+            border-radius: 4px;
             flex-shrink: 0;
-            padding: 0 6px;
-            border-radius: 3px;
-            font-size: .72rem;
-            align-self: flex-start;
-            margin-top: 2px;
         }
 
         .log-tag.IN {
-            background: rgba(0, 229, 255, .12);
+            background: rgba(0, 229, 255, .14);
             color: var(--accent2);
         }
 
         .log-tag.OUT {
-            background: rgba(108, 99, 255, .18);
+            background: rgba(108, 99, 255, .2);
             color: var(--accent);
         }
 
         .log-tag.SYS {
-            background: rgba(34, 197, 94, .12);
+            background: rgba(34, 197, 94, .14);
             color: var(--success);
         }
 
         .log-tag.ERR {
-            background: rgba(239, 68, 68, .14);
+            background: rgba(239, 68, 68, .16);
             color: var(--danger);
         }
 
-        .log-body {
+        .log-event-name {
+            font-family: var(--mono);
+            font-size: .82rem;
             color: var(--text);
-            word-break: break-all;
-            white-space: pre-wrap;
+            font-weight: 500;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .log-time {
+            font-family: var(--mono);
+            font-size: .72rem;
+            color: #444c6b;
+            flex-shrink: 0;
+        }
+
+        .log-chevron {
+            color: var(--text-muted);
+            font-size: .7rem;
+            flex-shrink: 0;
+            transition: transform .2s;
+        }
+
+        .log-entry.expanded .log-chevron {
+            transform: rotate(90deg);
+        }
+
+        .log-body {
+            display: none;
+            padding: 12px 16px 14px;
+            border-top: 1px solid var(--border);
+            font-family: var(--mono);
+            font-size: .8rem;
+            line-height: 1.75;
+            background: rgba(0, 0, 0, .25);
+            border-radius: 0 0 8px 8px;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .log-entry.expanded .log-body {
+            display: block;
+        }
+
+        /* JSON syntax highlight tokens */
+        .jk {
+            color: #79b8ff;
+        }
+
+        /* object key          */
+        .js {
+            color: #a8d1a0;
+        }
+
+        /* string value        */
+        .jn {
+            color: #f97316;
+        }
+
+        /* number              */
+        .jb {
+            color: #c084fc;
+        }
+
+        /* boolean / null      */
+        .jp {
+            color: #6b7280;
+        }
+
+        /* punctuation , : { } */
+        .jbr {
+            color: #94a3b8;
+        }
+
+        /* brackets [ ]        */
+
+        /* Plain SYS/ERR message */
+        .log-plain {
+            color: var(--text-muted);
+            font-family: var(--mono);
+            font-size: .8rem;
         }
 
         #log::-webkit-scrollbar {
@@ -420,6 +519,13 @@
         #log::-webkit-scrollbar-thumb {
             background: var(--border);
             border-radius: 3px;
+        }
+
+        .empty-log {
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 40px;
+            font-size: .85rem;
         }
 
         .empty-log {
@@ -500,6 +606,7 @@
 
         #log {
             border-radius: 0 0 var(--radius) var(--radius);
+            padding: 10px;
         }
     </style>
 </head>
@@ -508,7 +615,7 @@
 
     <div class="header">
         <h1>⚡ Socket.IO Dev Client</h1>
-        <p>Real-time WebSocket testing tool</p>
+        <p>Công cụ kiểm thử WebSocket thời gian thực</p>
     </div>
 
     <div class="container">
@@ -516,7 +623,7 @@
         <!-- ── LEFT COL ── -->
         <div class="col">
 
-            <!-- Connection card -->
+            <!-- Thẻ kết nối -->
             <div class="card">
                 <div class="card-title"><span class="dot"></span> Connection</div>
 
@@ -527,18 +634,18 @@
                 </div>
 
                 <div class="field">
-                    <label for="authToken">Auth Token <em
-                            style="font-style:normal;color:#444c6b">(optional)</em></label>
-                    <input id="authToken" type="text" placeholder='Bearer xxx  or  {"token":"xxx"}' />
+                    <label for="authToken">Auth Token <em style="font-style:normal;color:#444c6b">(không bắt
+                            buộc)</em></label>
+                    <input id="authToken" type="text" placeholder='Bearer xxx  hoặc  {"token":"xxx"}' />
                 </div>
 
                 <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
                     <div class="btn-row" style="flex:1;min-width:0">
-                        <button class="btn btn-success" id="connectBtn">▶ Connect</button>
-                        <button class="btn btn-danger" id="disconnectBtn" disabled>◼ Disconnect</button>
+                        <button class="btn btn-success" id="connectBtn">▶ Kết nối</button>
+                        <button class="btn btn-danger" id="disconnectBtn" disabled>◼ Ngắt kết nối</button>
                     </div>
                     <div id="statusBadge" class="disconnected" style="flex-shrink:0"><span class="pulse"></span>
-                        Disconnected</div>
+                        Chưa kết nối</div>
                 </div>
 
                 <div class="conn-detail" id="socketIdInfo" style="display:none;margin-top:8px;font-size:.78rem">
@@ -548,21 +655,21 @@
 
 
 
-            <!-- Custom Listeners card -->
+            <!-- Thẻ lắng nghe sự kiện -->
             <div class="card" style="flex:1">
                 <div class="card-title"><span class="dot" style="background:var(--success)"></span> Custom Listeners
                 </div>
 
                 <div class="field" style="display:flex;gap:8px;align-items:flex-end">
                     <div style="flex:1">
-                        <label for="listenEvent">Event name to listen</label>
-                        <input id="listenEvent" type="text" placeholder="e.g. new_message" />
+                        <label for="listenEvent">Tên sự kiện cần lắng nghe</label>
+                        <input id="listenEvent" type="text" placeholder="vd: new_message" />
                     </div>
-                    <button class="btn btn-primary" id="addListenerBtn" style="flex-shrink:0">+ Add</button>
+                    <button class="btn btn-primary" id="addListenerBtn" style="flex-shrink:0">+ Thêm</button>
                 </div>
 
                 <div id="listenersList">
-                    <div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">No custom listeners yet.</div>
+                    <div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">Chưa có listener nào.</div>
                 </div>
             </div>
 
@@ -571,17 +678,18 @@
         <!-- ── RIGHT COL ── -->
         <div class="col">
 
-            <!-- Emit card -->
+            <!-- Thẻ gửi sự kiện -->
             <div class="card" style="flex:1;display:flex;flex-direction:column">
-                <div class="card-title"><span class="dot" style="background:var(--accent2)"></span> Emit Event</div>
+                <div class="card-title"><span class="dot" style="background:var(--accent2)"></span> Emit Event
+                </div>
 
                 <div class="field">
-                    <label for="emitEvent">Event name</label>
+                    <label for="emitEvent">Tên sự kiện</label>
                     <div style="display:flex;gap:8px;align-items:center;margin-top:5px">
-                        <input id="emitEvent" type="text" value="" placeholder="Event name"
+                        <input id="emitEvent" type="text" value="" placeholder="Tên sự kiện"
                             style="flex:1;margin-top:0" />
                         <select id="presetSelect" style="flex-shrink:0;width:auto">
-                            <option value="">— Choose preset —</option>
+                            <option value="">— Chọn preset —</option>
                         </select>
                     </div>
                 </div>
@@ -589,13 +697,13 @@
                 <div class="field" style="flex:1;display:flex;flex-direction:column">
                     <label for="emitJson">JSON Payload</label>
                     <textarea id="emitJson" placeholder='{"key": "value"}' style="flex:1;min-height:200px"></textarea>
-                    <div class="json-error" id="jsonError">⚠ Invalid JSON</div>
+                    <div class="json-error" id="jsonError">⚠ JSON không hợp lệ</div>
                 </div>
 
                 <div class="btn-row">
-                    <button class="btn btn-primary" id="sendBtn" disabled>⬆ Emit</button>
-                    <button class="btn btn-outline" id="formatBtn">{ } Format</button>
-                    <button class="btn btn-outline" id="clearPayloadBtn">✕ Clear</button>
+                    <button class="btn btn-primary" id="sendBtn" disabled>⬆ Gửi</button>
+                    <button class="btn btn-outline" id="formatBtn">{ } Định dạng</button>
+                    <button class="btn btn-outline" id="clearPayloadBtn">✕ Xóa</button>
                 </div>
             </div>
 
@@ -604,32 +712,37 @@
         <!-- ── LOG (full width) ── -->
         <div class="log-section">
 
-            <!-- Log nav bar -->
+            <!-- Thanh điều hướng log -->
             <div class="log-nav">
                 <div class="log-nav-title">
-                    <span style="color:var(--accent2)">📋</span> Live Log
+                    <span style="color:var(--accent2)">📋</span> Nhật ký
                     <span id="logCount"
                         style="font-weight:400;color:var(--text-muted);font-size:.72rem;letter-spacing:0">— 0
-                        entries</span>
+                        dòng</span>
                 </div>
 
+                <button class="btn btn-outline" id="expandAllBtn" style="padding:5px 12px;font-size:.78rem">▼ Mở
+                    hết</button>
+                <button class="btn btn-outline" id="collapseAllBtn" style="padding:5px 12px;font-size:.78rem">▶ Thu
+                    hết</button>
+
                 <button class="btn btn-outline" id="pauseLogBtn" style="padding:5px 12px;font-size:.78rem">⏸
-                    Pause</button>
+                    Tạm dừng</button>
 
                 <label
                     style="display:flex;align-items:center;gap:5px;color:var(--text-muted);font-size:.78rem;cursor:pointer;white-space:nowrap">
                     <input type="checkbox" id="autoScrollCheck" checked style="width:auto;accent-color:var(--accent)">
-                    Auto-scroll
+                    Tự cuộn
                 </label>
 
                 <div style="width:1px;height:18px;background:var(--border);flex-shrink:0"></div>
 
                 <button class="btn btn-outline" id="clearLogBtn" style="padding:5px 12px;font-size:.78rem">🗑
-                    Clear</button>
+                    Xóa</button>
             </div>
 
             <div id="log">
-                <div class="empty-log">No events yet. Connect to start.</div>
+                <div class="empty-log">Chưa có dữ liệu. Hãy kết nối để bắt đầu.</div>
             </div>
         </div>
 
@@ -672,31 +785,123 @@
         };
 
         // ─────────────────────────────────────────────────
-        //  Logging
+        //  Logging – collapsible cards
         // ─────────────────────────────────────────────────
-        function log(tag, body) {
+        // Token-based JSON syntax highlighter
+        function syntaxHighlight(obj) {
+            const raw = (typeof obj === 'string') ? obj : JSON.stringify(obj, null, 2);
+            let html = '';
+            let i = 0;
+            while (i < raw.length) {
+                // String
+                if (raw[i] === '"') {
+                    let j = i + 1;
+                    while (j < raw.length) {
+                        if (raw[j] === '\\') { j += 2; continue; }
+                        if (raw[j] === '"') { j++; break; }
+                        j++;
+                    }
+                    const token = raw.slice(i, j);
+                    // Peek ahead: is this a key? (followed by optional whitespace + colon)
+                    let rest = raw.slice(j);
+                    const isKey = /^\s*:/.test(rest);
+                    const cls = isKey ? 'jk' : 'js';
+                    html += `<span class="${cls}">${esc(token)}</span>`;
+                    i = j;
+                    // Number
+                } else if (/[-\d]/.test(raw[i]) && (i === 0 || /[\[\{,:\s]/.test(raw[i - 1]))) {
+                    let j = i;
+                    if (raw[j] === '-') j++;
+                    while (j < raw.length && /[\d.eE+\-]/.test(raw[j])) j++;
+                    html += `<span class="jn">${esc(raw.slice(i, j))}</span>`;
+                    i = j;
+                    // Boolean / null
+                } else if (raw.slice(i, i + 4) === 'true') {
+                    html += `<span class="jb">true</span>`; i += 4;
+                } else if (raw.slice(i, i + 5) === 'false') {
+                    html += `<span class="jb">false</span>`; i += 5;
+                } else if (raw.slice(i, i + 4) === 'null') {
+                    html += `<span class="jb">null</span>`; i += 4;
+                    // Brackets
+                } else if ('[]'.includes(raw[i])) {
+                    html += `<span class="jbr">${esc(raw[i])}</span>`; i++;
+                    // Punctuation  { } , :
+                } else if ('{}'.includes(raw[i]) || raw[i] === ',' || raw[i] === ':') {
+                    html += `<span class="jp">${esc(raw[i])}</span>`; i++;
+                    // Whitespace / newlines (preserve as-is)
+                } else {
+                    html += raw[i] === '<' ? '&lt;' : raw[i] === '>' ? '&gt;' : raw[i] === '&' ? '&amp;' : raw[i];
+                    i++;
+                }
+            }
+            return html;
+        }
+
+        function esc(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function log(tag, eventName, data) {
             if (logPaused) return;
 
-            const logBox = document.getElementById("log");
-
-            // clear placeholder
-            const empty = logBox.querySelector(".empty-log");
+            const logBox = document.getElementById('log');
+            const empty = logBox.querySelector('.empty-log');
             if (empty) empty.remove();
 
-            const time = new Date().toLocaleTimeString("en-US", { hour12: false });
+            const time = new Date().toLocaleTimeString('en-US', { hour12: false });
 
-            const entry = document.createElement("div");
-            entry.className = "log-entry";
-            entry.innerHTML =
-                `<span class="log-time">${time}</span>` +
+            // Determine if we have structured JSON data or plain text
+            const hasData = data !== undefined && data !== null && data !== '';
+            const autoExpand = (tag === 'IN' || tag === 'OUT') && hasData;
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (autoExpand ? ' expanded' : '');
+
+            // Header (always visible)
+            const header = document.createElement('div');
+            header.className = 'log-header';
+
+            // Color-code the header background
+            const bgMap = { IN: 'rgba(0,229,255,.05)', OUT: 'rgba(108,99,255,.07)', SYS: 'rgba(34,197,94,.05)', ERR: 'rgba(239,68,68,.07)' };
+            header.style.background = bgMap[tag] || 'transparent';
+
+            header.innerHTML =
                 `<span class="log-tag ${tag}">${tag}</span>` +
-                `<span class="log-body">${escapeHtml(body)}</span>`;
+                `<span class="log-event-name">${escapeHtml(eventName)}</span>` +
+                `<span class="log-time">${time}</span>` +
+                (hasData ? `<span class="log-chevron">▶</span>` : '');
+
+            entry.appendChild(header);
+
+            // Body (collapsible)
+            if (hasData) {
+                const body = document.createElement('div');
+                body.className = 'log-body';
+
+                // Normalise data: if it's a JSON string, parse it first
+                let renderData = data;
+                if (typeof data === 'string') {
+                    try { renderData = JSON.parse(data); } catch { /* keep as string */ }
+                }
+
+                if (typeof renderData === 'object' && renderData !== null) {
+                    body.innerHTML = syntaxHighlight(JSON.stringify(renderData, null, 2));
+                } else {
+                    body.innerHTML = `<span class="log-plain">${escapeHtml(String(renderData))}</span>`;
+                }
+
+                entry.appendChild(body);
+
+                header.onclick = () => {
+                    entry.classList.toggle('expanded');
+                };
+            }
 
             logBox.appendChild(entry);
             logEntries++;
-            document.getElementById("logCount").textContent = `${logEntries} entries`;
+            document.getElementById('logCount').textContent = `${logEntries} dòng`;
 
-            if (document.getElementById("autoScrollCheck").checked) {
+            if (document.getElementById('autoScrollCheck').checked) {
                 logBox.scrollTop = logBox.scrollHeight;
             }
         }
@@ -740,7 +945,7 @@
         function setConnected(id) {
             const badge = document.getElementById("statusBadge");
             badge.className = "connected";
-            badge.innerHTML = `<span class="pulse"></span> Connected`;
+            badge.innerHTML = `<span class="pulse"></span> Đã kết nối`;
 
             document.getElementById("socketIdVal").textContent = id;
             document.getElementById("socketIdInfo").style.display = "block";
@@ -753,7 +958,7 @@
         function setDisconnected() {
             const badge = document.getElementById("statusBadge");
             badge.className = "disconnected";
-            badge.innerHTML = `<span class="pulse"></span> Disconnected`;
+            badge.innerHTML = `<span class="pulse"></span> Chưa kết nối`;
 
             document.getElementById("socketIdInfo").style.display = "none";
 
@@ -769,17 +974,17 @@
             const url = document.getElementById("serverUrl").value.trim();
             const token = document.getElementById("authToken").value.trim();
 
-            if (!url) { log("ERR", "Server URL is empty."); return; }
-            if (socket) { log("SYS", "Already connected."); return; }
+            if (!url) { log("ERR", "Server URL không được để trống."); return; }
+            if (socket) { log("SYS", "Đã kết nối rồi."); return; }
 
-            // Build auth option
+            // Tạo auth option
             let authOpt = undefined;
             if (token) {
                 try { authOpt = JSON.parse(token); }
                 catch { authOpt = { token }; }
             }
 
-            log("SYS", `Connecting to ${url} …`);
+            log("SYS", `Đang kết nối đến ${url} …`);
 
             socket = io(url, {
                 transports: ["websocket"],
@@ -787,25 +992,25 @@
             });
 
             socket.on("connect", () => {
-                log("SYS", `Connected ✓  id=${socket.id}`);
+                log("SYS", `Kết nối thành công ✓  id=${socket.id}`);
                 setConnected(socket.id);
                 reattachListeners();
             });
 
             socket.on("disconnect", (reason) => {
-                log("SYS", `Disconnected — ${reason}`);
+                log("SYS", `Đã ngắt kết nối — ${reason}`);
                 setDisconnected();
                 socket = null;
             });
 
             socket.on("connect_error", (err) => {
-                log("ERR", `Connection error: ${err.message}`);
+                log("ERR", `Lỗi kết nối: ${err.message}`);
             });
 
             // Catch-all for incoming events
             socket.onAny((event, ...args) => {
-                const pretty = args.length === 1 ? JSON.stringify(args[0], null, 2) : JSON.stringify(args, null, 2);
-                log("IN", `[${event}]\n${pretty}`);
+                const data = args.length === 1 ? args[0] : args;
+                log("IN", event, data);
             });
         };
 
@@ -823,7 +1028,7 @@
         //  Emit JSON
         // ─────────────────────────────────────────────────
         document.getElementById("sendBtn").onclick = () => {
-            if (!socket) { log("ERR", "Not connected."); return; }
+            if (!socket) { log("ERR", "Chưa kết nối."); return; }
 
             const event = document.getElementById("emitEvent").value.trim() || "message";
             const payload = parsePayload();
@@ -831,7 +1036,7 @@
             if (payload === null) return;   // JSON error shown
 
             socket.emit(event, payload);
-            log("OUT", `[${event}]\n${JSON.stringify(payload, null, 2)}`);
+            log("OUT", event, payload);
         };
 
         // Also allow Ctrl+Enter in textarea
@@ -871,20 +1076,20 @@
         function addListener(eventName) {
             if (!eventName) return;
             if (listeners[eventName]) {
-                log("SYS", `Already listening to "${eventName}".`);
+                log("SYS", `Đã lắng nghe "${eventName}" rồi.`);
                 return;
             }
 
             const handler = (...args) => {
-                const pretty = args.length === 1 ? JSON.stringify(args[0], null, 2) : JSON.stringify(args, null, 2);
-                log("IN", `[${eventName}] (custom)\n${pretty}`);
+                const data = args.length === 1 ? args[0] : args;
+                log("IN", `${eventName} (custom)`, data);
             };
 
             listeners[eventName] = handler;
             if (socket) socket.on(eventName, handler);
 
             renderListeners();
-            log("SYS", `Now listening to "${eventName}".`);
+            log("SYS", `Đang lắng nghe "${eventName}".`);
         }
 
         function removeListener(eventName) {
@@ -893,7 +1098,7 @@
             }
             delete listeners[eventName];
             renderListeners();
-            log("SYS", `Removed listener for "${eventName}".`);
+            log("SYS", `Đã xóa listener "${eventName}".`);
         }
 
         function renderListeners() {
@@ -902,7 +1107,7 @@
 
             const keys = Object.keys(listeners);
             if (!keys.length) {
-                container.innerHTML = `<div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">No custom listeners yet.</div>`;
+                container.innerHTML = `<div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">Chưa có listener nào.</div>`;
                 return;
             }
 
@@ -912,7 +1117,7 @@
                 item.innerHTML =
                     `<span class="listener-badge">on</span>` +
                     `<span style="flex:1">${escapeHtml(ev)}</span>` +
-                    `<button class="rm-btn" title="Remove listener">✕</button>`;
+                    `<button class="rm-btn" title="Xóa listener">✕</button>`;
                 item.querySelector(".rm-btn").onclick = () => removeListener(ev);
                 container.appendChild(item);
             });
@@ -933,15 +1138,23 @@
         // ─────────────────────────────────────────────────
         document.getElementById("clearLogBtn").onclick = () => {
             const logBox = document.getElementById("log");
-            logBox.innerHTML = `<div class="empty-log">Log cleared.</div>`;
+            logBox.innerHTML = `<div class="empty-log">Đã xóa nhật ký.</div>`;
             logEntries = 0;
-            document.getElementById("logCount").textContent = "0 entries";
+            document.getElementById("logCount").textContent = "0 dòng";
         };
 
         document.getElementById("pauseLogBtn").onclick = function () {
             logPaused = !logPaused;
-            this.textContent = logPaused ? "▶ Resume" : "⏸ Pause";
+            this.textContent = logPaused ? "▶ Tiếp tục" : "⏸ Tạm dừng";
             this.className = logPaused ? "btn btn-warn" : "btn btn-outline";
+        };
+
+        document.getElementById("expandAllBtn").onclick = () => {
+            document.querySelectorAll(".log-entry").forEach(e => e.classList.add("expanded"));
+        };
+
+        document.getElementById("collapseAllBtn").onclick = () => {
+            document.querySelectorAll(".log-entry").forEach(e => e.classList.remove("expanded"));
         };
     </script>
 </body>
