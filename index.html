@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Dev Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #22263a;
+            --border: #2e3347;
+            --accent: #6c63ff;
+            --accent2: #00e5ff;
+            --success: #22c55e;
+            --warn: #f59e0b;
+            --danger: #ef4444;
+            --text: #e2e8f0;
+            --text-muted: #7c8594;
+            --font: 'Inter', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, .4);
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .header h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: .85rem;
+            margin-top: 4px;
+        }
+
+        /* ── Layout ── */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        /* ── Form elements ── */
+        label {
+            font-size: .82rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            height: 38px;
+            box-sizing: border-box;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: .9rem;
+            padding: 9px 12px;
+            outline: none;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        select {
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237c8594' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            padding-right: 34px;
+            cursor: pointer;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, .18);
+        }
+
+        textarea {
+            height: auto;
+            min-height: 110px;
+            font-family: var(--mono);
+            font-size: .82rem;
+            resize: vertical;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            height: 38px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: var(--font);
+            font-size: .88rem;
+            font-weight: 500;
+            transition: all .18s;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: #7c74ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(108, 99, 255, .4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-success:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .btn:active {
+            transform: scale(.97);
+        }
+
+        .btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* ── Status badge ── */
+        #statusBadge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .8rem;
+            font-weight: 500;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            transition: all .3s;
+        }
+
+        #statusBadge.connected {
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        #statusBadge.disconnected {
+            border-color: var(--danger);
+            color: var(--danger);
+        }
+
+        #statusBadge .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        #statusBadge.connected .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .5;
+                transform: scale(.8);
+            }
+        }
+
+        /* ── Listeners list ── */
+        #listenersList {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .listener-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-family: var(--mono);
+            font-size: .82rem;
+            animation: slideIn .2s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .listener-badge {
+            background: rgba(108, 99, 255, .2);
+            color: var(--accent);
+            border-radius: 4px;
+            padding: 2px 7px;
+            font-size: .75rem;
+        }
+
+        .listener-item .rm-btn {
+            margin-left: auto;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color .15s, background .15s;
+        }
+
+        .listener-item .rm-btn:hover {
+            color: var(--danger);
+            background: rgba(239, 68, 68, .12);
+        }
+
+        /* ── Log ── */
+        #log {
+            background: #0a0c14;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px;
+            height: 420px;
+            overflow-y: auto;
+            font-family: var(--mono);
+            font-size: .8rem;
+            line-height: 1.7;
+            scroll-behavior: smooth;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            padding: 3px 0;
+        }
+
+        .log-time {
+            color: #444c6b;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .log-tag {
+            font-weight: 600;
+            flex-shrink: 0;
+            padding: 0 6px;
+            border-radius: 3px;
+            font-size: .72rem;
+            align-self: flex-start;
+            margin-top: 2px;
+        }
+
+        .log-tag.IN {
+            background: rgba(0, 229, 255, .12);
+            color: var(--accent2);
+        }
+
+        .log-tag.OUT {
+            background: rgba(108, 99, 255, .18);
+            color: var(--accent);
+        }
+
+        .log-tag.SYS {
+            background: rgba(34, 197, 94, .12);
+            color: var(--success);
+        }
+
+        .log-tag.ERR {
+            background: rgba(239, 68, 68, .14);
+            color: var(--danger);
+        }
+
+        .log-body {
+            color: var(--text);
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        #log::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #log::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #log::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .empty-log {
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 40px;
+            font-size: .85rem;
+        }
+
+        /* ── Full-width log section ── */
+        .log-section {
+            grid-column: 1 / -1;
+        }
+
+        /* ── Field group ── */
+        .field {
+            margin-bottom: 12px;
+        }
+
+        .field:last-child {
+            margin-bottom: 0;
+        }
+
+        /* ── Connection info row ── */
+        .conn-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .conn-detail {
+            font-size: .78rem;
+            color: var(--text-muted);
+        }
+
+        .conn-detail span {
+            color: var(--text);
+            font-family: var(--mono);
+        }
+
+        /* ── JSON error hint ── */
+        .json-error {
+            color: var(--danger);
+            font-size: .75rem;
+            margin-top: 4px;
+            display: none;
+        }
+
+        /* ── Log nav bar ── */
+        .log-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-radius: var(--radius) var(--radius) 0 0;
+            padding: 10px 16px;
+        }
+
+        .log-nav-title {
+            font-size: .75rem;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .log-nav #log {
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+
+        #log {
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>⚡ Socket.IO Dev Client</h1>
+        <p>Real-time WebSocket testing tool</p>
+    </div>
+
+    <div class="container">
+
+        <!-- ── LEFT COL ── -->
+        <div class="col">
+
+            <!-- Connection card -->
+            <div class="card">
+                <div class="card-title"><span class="dot"></span> Connection</div>
+
+                <div class="field">
+                    <label for="serverUrl">Server URL</label>
+                    <input id="serverUrl" type="text" value="http://localhost:3000"
+                        placeholder="http://localhost:3000" />
+                </div>
+
+                <div class="field">
+                    <label for="authToken">Auth Token <em
+                            style="font-style:normal;color:#444c6b">(optional)</em></label>
+                    <input id="authToken" type="text" placeholder='Bearer xxx  or  {"token":"xxx"}' />
+                </div>
+
+                <div style="display:flex;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap">
+                    <div class="btn-row" style="flex:1;min-width:0">
+                        <button class="btn btn-success" id="connectBtn">▶ Connect</button>
+                        <button class="btn btn-danger" id="disconnectBtn" disabled>◼ Disconnect</button>
+                    </div>
+                    <div id="statusBadge" class="disconnected" style="flex-shrink:0"><span class="pulse"></span>
+                        Disconnected</div>
+                </div>
+
+                <div class="conn-detail" id="socketIdInfo" style="display:none;margin-top:8px;font-size:.78rem">
+                    Socket ID: <span id="socketIdVal" style="color:var(--text);font-family:var(--mono)">—</span>
+                </div>
+            </div>
+
+
+
+            <!-- Custom Listeners card -->
+            <div class="card" style="flex:1">
+                <div class="card-title"><span class="dot" style="background:var(--success)"></span> Custom Listeners
+                </div>
+
+                <div class="field" style="display:flex;gap:8px;align-items:flex-end">
+                    <div style="flex:1">
+                        <label for="listenEvent">Event name to listen</label>
+                        <input id="listenEvent" type="text" placeholder="e.g. new_message" />
+                    </div>
+                    <button class="btn btn-primary" id="addListenerBtn" style="flex-shrink:0">+ Add</button>
+                </div>
+
+                <div id="listenersList">
+                    <div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">No custom listeners yet.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── RIGHT COL ── -->
+        <div class="col">
+
+            <!-- Emit card -->
+            <div class="card" style="flex:1;display:flex;flex-direction:column">
+                <div class="card-title"><span class="dot" style="background:var(--accent2)"></span> Emit Event</div>
+
+                <div class="field">
+                    <label for="emitEvent">Event name</label>
+                    <div style="display:flex;gap:8px;align-items:center;margin-top:5px">
+                        <input id="emitEvent" type="text" value="" placeholder="Event name"
+                            style="flex:1;margin-top:0" />
+                        <select id="presetSelect" style="flex-shrink:0;width:auto">
+                            <option value="">— Choose preset —</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field" style="flex:1;display:flex;flex-direction:column">
+                    <label for="emitJson">JSON Payload</label>
+                    <textarea id="emitJson" placeholder='{"key": "value"}' style="flex:1;min-height:200px"></textarea>
+                    <div class="json-error" id="jsonError">⚠ Invalid JSON</div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" id="sendBtn" disabled>⬆ Emit</button>
+                    <button class="btn btn-outline" id="formatBtn">{ } Format</button>
+                    <button class="btn btn-outline" id="clearPayloadBtn">✕ Clear</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── LOG (full width) ── -->
+        <div class="log-section">
+
+            <!-- Log nav bar -->
+            <div class="log-nav">
+                <div class="log-nav-title">
+                    <span style="color:var(--accent2)">📋</span> Live Log
+                    <span id="logCount"
+                        style="font-weight:400;color:var(--text-muted);font-size:.72rem;letter-spacing:0">— 0
+                        entries</span>
+                </div>
+
+                <button class="btn btn-outline" id="pauseLogBtn" style="padding:5px 12px;font-size:.78rem">⏸
+                    Pause</button>
+
+                <label
+                    style="display:flex;align-items:center;gap:5px;color:var(--text-muted);font-size:.78rem;cursor:pointer;white-space:nowrap">
+                    <input type="checkbox" id="autoScrollCheck" checked style="width:auto;accent-color:var(--accent)">
+                    Auto-scroll
+                </label>
+
+                <div style="width:1px;height:18px;background:var(--border);flex-shrink:0"></div>
+
+                <button class="btn btn-outline" id="clearLogBtn" style="padding:5px 12px;font-size:.78rem">🗑
+                    Clear</button>
+            </div>
+
+            <div id="log">
+                <div class="empty-log">No events yet. Connect to start.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ─────────────────────────────────────────────────
+        //  State
+        // ─────────────────────────────────────────────────
+        let socket = null;
+        let logPaused = false;
+        let logEntries = 0;
+        const listeners = {};   // eventName -> handler fn
+
+        // ─────────────────────────────────────────────────
+        //  Presets
+        // ─────────────────────────────────────────────────
+        const PRESETS = [
+            { label: "Ping", event: "ping", payload: {} },
+            { label: "Join Room", event: "joinRoom", payload: { user_id: 67 } },
+            { label: "Leave Room", event: "leaveRoom", payload: { user_id: 67 } },
+        ];
+
+        const presetSelect = document.getElementById("presetSelect");
+        PRESETS.forEach((p, i) => {
+            const opt = document.createElement("option");
+            opt.value = i;
+            opt.textContent = p.label;
+            presetSelect.appendChild(opt);
+        });
+
+        presetSelect.onchange = () => {
+            const idx = presetSelect.value;
+            if (idx === "") return;
+            const p = PRESETS[idx];
+            document.getElementById("emitEvent").value = p.event;
+            document.getElementById("emitJson").value = JSON.stringify(p.payload, null, 2);
+            clearJsonError();
+            presetSelect.value = "";   // reset after apply
+        };
+
+        // ─────────────────────────────────────────────────
+        //  Logging
+        // ─────────────────────────────────────────────────
+        function log(tag, body) {
+            if (logPaused) return;
+
+            const logBox = document.getElementById("log");
+
+            // clear placeholder
+            const empty = logBox.querySelector(".empty-log");
+            if (empty) empty.remove();
+
+            const time = new Date().toLocaleTimeString("en-US", { hour12: false });
+
+            const entry = document.createElement("div");
+            entry.className = "log-entry";
+            entry.innerHTML =
+                `<span class="log-time">${time}</span>` +
+                `<span class="log-tag ${tag}">${tag}</span>` +
+                `<span class="log-body">${escapeHtml(body)}</span>`;
+
+            logBox.appendChild(entry);
+            logEntries++;
+            document.getElementById("logCount").textContent = `${logEntries} entries`;
+
+            if (document.getElementById("autoScrollCheck").checked) {
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        // ─────────────────────────────────────────────────
+        //  JSON helpers
+        // ─────────────────────────────────────────────────
+        function parsePayload() {
+            const raw = document.getElementById("emitJson").value.trim();
+            if (!raw) return {};
+            try {
+                const parsed = JSON.parse(raw);
+                clearJsonError();
+                return parsed;
+            } catch (e) {
+                showJsonError();
+                return null;
+            }
+        }
+
+        function showJsonError() {
+            document.getElementById("jsonError").style.display = "block";
+            document.getElementById("emitJson").style.borderColor = "var(--danger)";
+        }
+
+        function clearJsonError() {
+            document.getElementById("jsonError").style.display = "none";
+            document.getElementById("emitJson").style.borderColor = "";
+        }
+
+        // ─────────────────────────────────────────────────
+        //  UI state helpers
+        // ─────────────────────────────────────────────────
+        function setConnected(id) {
+            const badge = document.getElementById("statusBadge");
+            badge.className = "connected";
+            badge.innerHTML = `<span class="pulse"></span> Connected`;
+
+            document.getElementById("socketIdVal").textContent = id;
+            document.getElementById("socketIdInfo").style.display = "block";
+
+            document.getElementById("connectBtn").disabled = true;
+            document.getElementById("disconnectBtn").disabled = false;
+            document.getElementById("sendBtn").disabled = false;
+        }
+
+        function setDisconnected() {
+            const badge = document.getElementById("statusBadge");
+            badge.className = "disconnected";
+            badge.innerHTML = `<span class="pulse"></span> Disconnected`;
+
+            document.getElementById("socketIdInfo").style.display = "none";
+
+            document.getElementById("connectBtn").disabled = false;
+            document.getElementById("disconnectBtn").disabled = true;
+            document.getElementById("sendBtn").disabled = true;
+        }
+
+        // ─────────────────────────────────────────────────
+        //  Connect
+        // ─────────────────────────────────────────────────
+        document.getElementById("connectBtn").onclick = () => {
+            const url = document.getElementById("serverUrl").value.trim();
+            const token = document.getElementById("authToken").value.trim();
+
+            if (!url) { log("ERR", "Server URL is empty."); return; }
+            if (socket) { log("SYS", "Already connected."); return; }
+
+            // Build auth option
+            let authOpt = undefined;
+            if (token) {
+                try { authOpt = JSON.parse(token); }
+                catch { authOpt = { token }; }
+            }
+
+            log("SYS", `Connecting to ${url} …`);
+
+            socket = io(url, {
+                transports: ["websocket"],
+                ...(authOpt ? { auth: authOpt } : {})
+            });
+
+            socket.on("connect", () => {
+                log("SYS", `Connected ✓  id=${socket.id}`);
+                setConnected(socket.id);
+                reattachListeners();
+            });
+
+            socket.on("disconnect", (reason) => {
+                log("SYS", `Disconnected — ${reason}`);
+                setDisconnected();
+                socket = null;
+            });
+
+            socket.on("connect_error", (err) => {
+                log("ERR", `Connection error: ${err.message}`);
+            });
+
+            // Catch-all for incoming events
+            socket.onAny((event, ...args) => {
+                const pretty = args.length === 1 ? JSON.stringify(args[0], null, 2) : JSON.stringify(args, null, 2);
+                log("IN", `[${event}]\n${pretty}`);
+            });
+        };
+
+        // ─────────────────────────────────────────────────
+        //  Disconnect
+        // ─────────────────────────────────────────────────
+        document.getElementById("disconnectBtn").onclick = () => {
+            if (!socket) return;
+            socket.disconnect();
+            socket = null;
+            setDisconnected();
+        };
+
+        // ─────────────────────────────────────────────────
+        //  Emit JSON
+        // ─────────────────────────────────────────────────
+        document.getElementById("sendBtn").onclick = () => {
+            if (!socket) { log("ERR", "Not connected."); return; }
+
+            const event = document.getElementById("emitEvent").value.trim() || "message";
+            const payload = parsePayload();
+
+            if (payload === null) return;   // JSON error shown
+
+            socket.emit(event, payload);
+            log("OUT", `[${event}]\n${JSON.stringify(payload, null, 2)}`);
+        };
+
+        // Also allow Ctrl+Enter in textarea
+        document.getElementById("emitJson").addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key === "Enter") {
+                document.getElementById("sendBtn").click();
+            }
+        });
+
+        // ─────────────────────────────────────────────────
+        //  Format JSON
+        // ─────────────────────────────────────────────────
+        document.getElementById("formatBtn").onclick = () => {
+            const ta = document.getElementById("emitJson");
+            try {
+                ta.value = JSON.stringify(JSON.parse(ta.value), null, 2);
+                clearJsonError();
+            } catch { showJsonError(); }
+        };
+
+        document.getElementById("clearPayloadBtn").onclick = () => {
+            document.getElementById("emitJson").value = "";
+            document.getElementById("emitEvent").value = "";
+            clearJsonError();
+        };
+
+        // ─────────────────────────────────────────────────
+        //  Custom Listeners
+        // ─────────────────────────────────────────────────
+        function reattachListeners() {
+            // Re-register all stored listeners on new socket
+            Object.keys(listeners).forEach(ev => {
+                socket && socket.on(ev, listeners[ev]);
+            });
+        }
+
+        function addListener(eventName) {
+            if (!eventName) return;
+            if (listeners[eventName]) {
+                log("SYS", `Already listening to "${eventName}".`);
+                return;
+            }
+
+            const handler = (...args) => {
+                const pretty = args.length === 1 ? JSON.stringify(args[0], null, 2) : JSON.stringify(args, null, 2);
+                log("IN", `[${eventName}] (custom)\n${pretty}`);
+            };
+
+            listeners[eventName] = handler;
+            if (socket) socket.on(eventName, handler);
+
+            renderListeners();
+            log("SYS", `Now listening to "${eventName}".`);
+        }
+
+        function removeListener(eventName) {
+            if (socket && listeners[eventName]) {
+                socket.off(eventName, listeners[eventName]);
+            }
+            delete listeners[eventName];
+            renderListeners();
+            log("SYS", `Removed listener for "${eventName}".`);
+        }
+
+        function renderListeners() {
+            const container = document.getElementById("listenersList");
+            container.innerHTML = "";
+
+            const keys = Object.keys(listeners);
+            if (!keys.length) {
+                container.innerHTML = `<div style="color:var(--text-muted);font-size:.82rem;padding:6px 0">No custom listeners yet.</div>`;
+                return;
+            }
+
+            keys.forEach(ev => {
+                const item = document.createElement("div");
+                item.className = "listener-item";
+                item.innerHTML =
+                    `<span class="listener-badge">on</span>` +
+                    `<span style="flex:1">${escapeHtml(ev)}</span>` +
+                    `<button class="rm-btn" title="Remove listener">✕</button>`;
+                item.querySelector(".rm-btn").onclick = () => removeListener(ev);
+                container.appendChild(item);
+            });
+        }
+
+        document.getElementById("addListenerBtn").onclick = () => {
+            const input = document.getElementById("listenEvent");
+            addListener(input.value.trim());
+            input.value = "";
+        };
+
+        document.getElementById("listenEvent").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") document.getElementById("addListenerBtn").click();
+        });
+
+        // ─────────────────────────────────────────────────
+        //  Log controls
+        // ─────────────────────────────────────────────────
+        document.getElementById("clearLogBtn").onclick = () => {
+            const logBox = document.getElementById("log");
+            logBox.innerHTML = `<div class="empty-log">Log cleared.</div>`;
+            logEntries = 0;
+            document.getElementById("logCount").textContent = "0 entries";
+        };
+
+        document.getElementById("pauseLogBtn").onclick = function () {
+            logPaused = !logPaused;
+            this.textContent = logPaused ? "▶ Resume" : "⏸ Pause";
+            this.className = logPaused ? "btn btn-warn" : "btn btn-outline";
+        };
+    </script>
+</body>
+
+</html>
